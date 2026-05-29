@@ -1,0 +1,141 @@
+---
+description: UI layer standards — forms (react-hook-form + zod), TanStack Query, feature structure, client components
+globs: "src/app/ui/**/*.ts", "src/app/ui/**/*.tsx"
+alwaysApply: false
+---
+
+# UI Layer Standards — LLM Rules
+
+When editing or generating code under `src/app/ui/`, follow these rules. All feature UI lives under `ui/features/<feature>/`.
+
+---
+
+## Scope and location
+
+**MUST**
+- Keep all feature-specific UI under `src/app/ui/features/<feature>/`: components, hooks, schemas, and (if needed) models/view-models.
+- Use the same feature name across subfolders: e.g. `ui/features/posts/components/`, `ui/features/posts/hooks/`, `ui/features/posts/schemas/`.
+
+**MUST NOT**
+- Put feature components, hooks, or schemas under `ui/shared/`; shared is for reusable primitives and lib only.
+- Put form schemas or feature-specific hooks outside `ui/features/<feature>/`.
+
+---
+
+## Forms — react-hook-form + zod
+
+**MUST**
+- Use **react-hook-form** for all form state and submission.
+- Define form validation and shape with **zod** schemas.
+- Place zod schemas for a feature under `ui/features/<feature>/schemas/` (e.g. `ui/features/posts/schemas/create-post-schema.ts`).
+- Infer form types from the zod schema (e.g. `z.infer<typeof createPostSchema>`) for type safety.
+
+**MUST NOT**
+- Use uncontrolled form state or ad-hoc validation instead of react-hook-form + zod.
+- Put feature form schemas in `ui/shared/` or outside `ui/features/<feature>/`.
+
+**SHOULD**
+- Export both the schema and an inferred type from the schema file (e.g. `CreatePostFormInput`) so components and hooks can reuse them.
+
+---
+
+## Client fetching and form submission — TanStack Query
+
+**MUST**
+- Use **TanStack Query** (e.g. `useMutation`, `useQuery`) for all client-side fetching and for form submission that triggers API/use-case calls.
+- Keep TanStack Query usage inside **hooks** in `ui/features/<feature>/hooks/`, not inside components.
+- Expose a single entry point from the hook (e.g. `handleSubmit`) that the component calls; the hook encapsulates mutation/query logic, loading/error state, and invalidation.
+
+**MUST NOT**
+- Call use cases, data services, or fetch directly from UI components; the hook should call the use case (or a thin client that uses it) and wrap it in TanStack Query.
+- Put `useMutation` / `useQuery` logic in the same file as the presentational component; keep it in the feature hook.
+
+**SHOULD**
+- Invalidate relevant queries after a successful mutation (e.g. create post → invalidate posts list) using TanStack Query’s invalidation APIs.
+
+---
+
+## Feature hook pattern (e.g. useCreatePost)
+
+**MUST**
+- For a form or action (e.g. create post), provide a hook (e.g. `useCreatePost`) in `ui/features/<feature>/hooks/` that:
+  - Accepts any needed options (e.g. callbacks).
+  - Uses TanStack Query (e.g. `useMutation`) to perform the submit.
+  - Calls the **use case** (or a client wrapper that uses the use case) to perform the actual create/post; the hook does not contain business rules, only wiring and client state.
+  - Returns at least a submit handler (e.g. `handleSubmit`) and typically loading/error state (e.g. `isPending`, `error`) so the component can stay presentational.
+- Implement all submit and fetch logic (including TanStack Query) inside this hook; the component only calls the handler and renders UI.
+
+**MUST NOT**
+- Expose use case or data layer types to the component; the component works with the hook’s API (e.g. `handleSubmit`, `isPending`) and with form types from the schema.
+- Put mutation/query logic in the component file.
+
+**Example (pattern only):**
+- Hook: `useCreatePost()` → returns `{ handleSubmit, isPending, error }`; inside the hook: `useMutation` that calls a use case (or client) to create the post; form values are transformed from schema shape to use case input inside the hook if needed.
+- Component: `<CreatePostForm />` uses `useForm` with the zod schema and calls `handleSubmit` from `useCreatePost()` on submit.
+
+---
+
+## View model vs use case input (MVVM)
+
+**MUST**
+- Treat the **zod schema** (and its inferred type) as the **view model** for that form: it describes what the view needs (fields, validation, optional/required), which may differ from the use case input.
+- If the form shape differs from the use case input, map inside the **hook**: schema type → use case input. The component does not know about use case input types; it only knows the schema type and the hook’s `handleSubmit`.
+
+**MUST NOT**
+- Force the use case input type to match the form schema; they are separate models (view model in UI, use case input in domain/data).
+- Put mapping logic (schema → use case input) in the component; keep it in the hook.
+
+**SHOULD**
+- Keep schemas focused on UI needs (labels, optional fields, client-only validation); use the hook to adapt to the use case contract.
+
+---
+
+## Client components and server pages
+
+**MUST**
+- Keep the **page** (route) as a **server component**: no `"use client"` in the page file; the page can import and render client components.
+- Extract interactive UI (forms, dialogs, client-side state) into **client components** under `ui/features/<feature>/components/` (e.g. `CreatePostForm.tsx`).
+- Add `"use client"` only at the top of these feature components (or of a small wrapper that composes them).
+- Have the page import the client component from `@/app/ui/features/<feature>/components/...` and pass any server-fetched props (e.g. initial data) as props.
+
+**MUST NOT**
+- Put `"use client"` on the page file; the page stays a server component.
+- Put server-only logic (e.g. direct use case or data service calls that must run on the server) inside a client component.
+- Create client components for a feature outside `ui/features/<feature>/components/`.
+
+**SHOULD**
+- Name client components by feature and purpose (e.g. `CreatePostForm`, `EditPostForm`, `PostListFilters`); keep the default page export as the server page that composes these.
+
+---
+
+## File structure (reference)
+
+For a feature (e.g. `posts`) with a create form:
+
+```
+src/app/ui/features/posts/
+  components/
+    CreatePostForm.tsx   # "use client"; uses useForm + useCreatePost
+    post-list.tsx
+    ...
+  hooks/
+    use-create-post.ts  # useMutation, calls use case, returns handleSubmit, isPending, error
+    use-post-details.ts
+    ...
+  schemas/
+    create-post-schema.ts  # zod schema + exported inferred type
+  (optional) models/      # UI-only view models if needed
+```
+
+---
+
+## Verification checklist (UI layer)
+
+When adding or changing UI under `ui/features/<feature>/`:
+
+- [ ] Forms use react-hook-form and a zod schema from `ui/features/<feature>/schemas/`.
+- [ ] Client fetch and form submission use TanStack Query inside a feature hook, not in the component.
+- [ ] Hook (e.g. `useCreatePost`) returns `handleSubmit` (and loading/error); all mutation/query logic lives in the hook and uses the use case.
+- [ ] Form schema and inferred type are the view model; mapping to use case input is done in the hook.
+- [ ] Client components live under `ui/features/<feature>/components/` with `"use client"`; the page file is a server component that imports and renders them.
+- [ ] No use case or data layer types are used directly in the component; only schema types and hook return types.
