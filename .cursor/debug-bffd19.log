@@ -1,6 +1,0 @@
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H2","location":"todo-form-add.tsx:24","message":"valid submit handler entered","data":{"valueLength":4,"valuePreview":"test"},"timestamp":1779961753951}
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H5","location":"use-todo-list.ts:132","message":"addTodoItem called","data":{"trimmedNameLength":4,"incomingName":"test"},"timestamp":1779961753951}
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H3","location":"todo-form-add.tsx:40","message":"about to reset after successful submit","data":{"resetTo":""},"timestamp":1779961753955}
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H2","location":"todo-form-add.tsx:24","message":"valid submit handler entered","data":{"valueLength":5,"valuePreview":"test3"},"timestamp":1779961946194}
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H5","location":"use-todo-list.ts:132","message":"addTodoItem called","data":{"trimmedNameLength":5,"incomingName":"test3"},"timestamp":1779961946194}
-{"sessionId":"bffd19","runId":"pre-fix","hypothesisId":"H3","location":"todo-form-add.tsx:40","message":"about to reset after successful submit","data":{"resetTo":""},"timestamp":1779961946198}
