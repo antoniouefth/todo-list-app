@@ -1,11 +1,9 @@
 "use client";
 
-import {
-  ETodoSortMode,
-  ETodoStatusFilter,
-} from "@/app/ui/features/todos/models/todo-filters";
+import { ETodoStatusFilter } from "@/app/ui/features/todos/models/todo-filters";
+import { useTodoUIStore } from "@/app/ui/features/todos/store/todo-ui-store";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 const STATUS_QUERY_KEY = "status";
 const URL_SYNC_DEBOUNCE_MS = 180;
@@ -15,19 +13,17 @@ export const useTodoFilters = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [searchText, setSearchText] = useState("");
-  const [sortMode, setSortMode] = useState<ETodoSortMode>(ETodoSortMode.Manual);
+  const { searchText, setSearchText, sortMode, setSortMode, statusFilter, setStatusFilter } =
+    useTodoUIStore();
 
   const initialStatus = useMemo<ETodoStatusFilter>(() => {
     const urlValue = searchParams.get(STATUS_QUERY_KEY) as ETodoStatusFilter | null;
     return urlValue ?? ETodoStatusFilter.All;
   }, [searchParams]);
 
-  const [statusFilter, setStatusFilter] = useState<ETodoStatusFilter>(initialStatus);
-
   useEffect(() => {
     setStatusFilter(initialStatus);
-  }, [initialStatus]);
+  }, [initialStatus, setStatusFilter]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

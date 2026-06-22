@@ -10,6 +10,7 @@ import { injectable } from "inversify";
 const TODO_STORAGE_KEY = "todo-list-app-data";
 
 const DEFAULT_TODO_LIST: ITodoList = {
+  id: crypto.randomUUID(),
   title: "Shopping List",
   items: [],
 };
@@ -17,28 +18,17 @@ const DEFAULT_TODO_LIST: ITodoList = {
 @injectable()
 export class TodosRepositoryImpl implements ITodosRepository {
   async getTodoList(): Promise<ITodoList> {
-    if (typeof window === "undefined") {
-      return DEFAULT_TODO_LIST;
-    }
-
     const rawData = window.localStorage.getItem(TODO_STORAGE_KEY);
     if (!rawData) {
       return DEFAULT_TODO_LIST;
     }
 
-    try {
-      const parsed = JSON.parse(rawData) as IRawTodoList;
-      return todoListToDomainAdapter(parsed);
-    } catch {
-      return DEFAULT_TODO_LIST;
-    }
+    const parsed = JSON.parse(rawData) as IRawTodoList;
+    return todoListToDomainAdapter(parsed);
   }
 
   async saveTodoList(todoList: ITodoList): Promise<void> {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    //na mpei stous adapters h utls gia to storage san service.
     window.localStorage.setItem(
       TODO_STORAGE_KEY,
       JSON.stringify(todoListToRawAdapter(todoList)),

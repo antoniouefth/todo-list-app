@@ -6,9 +6,8 @@ import { TodoToolbar } from "@/app/ui/features/todos/components/todo-toolbar";
 import { useTodoList } from "@/app/ui/features/todos/hooks/use-todo-list";
 import { canReorderTodos } from "@/app/ui/features/todos/hooks/todo-reorder-rule";
 import { AddTodoForm } from "@/app/ui/features/todos/components/todo-form-add";
-import { TodoItemRow } from "@/app/ui/features/todos/components/todo-item-row";
+import { TodoItemList } from "@/app/ui/features/todos/components/todo-item-list";
 import { Card, CardContent, CardHeader } from "@/app/ui/shared/components/ui/card";
-import { ListChecks, Search } from "lucide-react";
 
 export default function TodoApp() {
   const {
@@ -50,57 +49,6 @@ export default function TodoApp() {
   const pendingCount = todoList.items.length - completedCount;
   const canReorder = canReorderTodos({ sortMode, statusFilter });
 
-  const renderContent = () => {
-    if (filteredItems.length === 0 && todoList.items.length === 0) {
-      return (
-        <div className="rounded-xl border border-dashed p-10 text-center">
-          <ListChecks className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="text-lg font-medium">No todo items yet</p>
-          <p className="text-sm text-muted-foreground">
-            Add your first item to start tracking your progress.
-          </p>
-        </div>
-      );
-    }
-
-    if (filteredItems.length === 0) {
-      return (
-        <div className="rounded-xl border border-dashed p-10 text-center">
-          <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="text-lg font-medium">No matching items</p>
-          <p className="text-sm text-muted-foreground">
-            Adjust the search or filters to find existing todos.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-3">
-        {filteredItems.map((item) => (
-          <TodoItemRow
-            key={item.id}
-            item={item}
-            isManualSort={canReorder}
-            canMoveUp={todoList.items.findIndex((todo) => todo.id === item.id) > 0}
-            canMoveDown={
-              todoList.items.findIndex((todo) => todo.id === item.id) <
-              todoList.items.length - 1
-            }
-            isDragging={draggingTodoId === item.id}
-            onMoveUp={() => moveTodoItem(item.id, "up")}
-            onMoveDown={() => moveTodoItem(item.id, "down")}
-            onToggle={() => toggleTodoItem(item.id)}
-            onDelete={() => deleteTodoItem(item.id)}
-            onEdit={(name) => editTodoItem(item.id, name)}
-            onDragStart={() => setDraggingTodoId(item.id)}
-            onDragEnd={() => setDraggingTodoId(null)}
-            onDropOn={(fromTodoId) => reorderTodoItems(fromTodoId, item.id)}
-          />
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div className="mx-auto max-w-5xl overflow-x-auto px-4 py-10 md:py-16">
@@ -131,7 +79,19 @@ export default function TodoApp() {
           {isSaving ? (
             <p className="text-xs text-muted-foreground">Saving changes...</p>
           ) : null}
-          {renderContent()}
+          <TodoItemList
+            filteredItems={filteredItems}
+            allItems={todoList.items}
+            canReorder={canReorder}
+            draggingTodoId={draggingTodoId}
+            onMoveTodoItem={moveTodoItem}
+            onToggleTodoItem={toggleTodoItem}
+            onDeleteTodoItem={deleteTodoItem}
+            onEditTodoItem={editTodoItem}
+            onDragStart={setDraggingTodoId}
+            onDragEnd={() => setDraggingTodoId(null)}
+            onReorderTodoItems={reorderTodoItems}
+          />
         </CardContent>
       </Card>
     </div>

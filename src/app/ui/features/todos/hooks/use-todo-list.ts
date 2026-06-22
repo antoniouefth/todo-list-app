@@ -10,8 +10,9 @@ import {
 import { canReorderTodos } from "@/app/ui/features/todos/hooks/todo-reorder-rule";
 import { useTodoFilters } from "@/app/ui/features/todos/hooks/use-todo-filters";
 import { useToast } from "@/app/ui/shared/components/providers/toast-provider";
+import { useTodoUIStore } from "@/app/ui/features/todos/store/todo-ui-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 const TODO_LIST_QUERY_KEY = ["todo-list"] as const;
 
@@ -44,12 +45,22 @@ export const useTodoList = () => {
     statusFilter,
     setStatusFilter,
   } = useTodoFilters();
-  const [draggingTodoId, setDraggingTodoId] = useState<string | null>(null);
+  const { draggingTodoId, setDraggingTodoId } = useTodoUIStore();
 
   const todoListQuery = useQuery({
     queryKey: TODO_LIST_QUERY_KEY,
     queryFn: getTodoList,
+    enabled: typeof window !== "undefined", // den xreiazetai genika.
+    retry: false,
   });
+
+  //
+  useEffect(() => {
+    if (!todoListQuery.isError) return;
+    window.localStorage.removeItem("todo-list-app-data");
+    showToast("Corrupted data detected, starting fresh.", "destructive");
+    void queryClient.resetQueries({ queryKey: TODO_LIST_QUERY_KEY });
+  }, [todoListQuery.isError, queryClient, showToast]);
 
   const saveMutation = useMutation({
     mutationFn: async (nextTodoList: ITodoList) => {

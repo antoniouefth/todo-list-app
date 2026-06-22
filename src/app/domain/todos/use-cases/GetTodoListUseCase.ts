@@ -5,6 +5,7 @@ import { inject, injectable } from "inversify";
 @injectable()
 export class UGetTodoListUseCase {
   static readonly symbol = Symbol.for("GetTodoListUseCase");
+  // TODO ti einai to inversify kai to symbol
 
   constructor(
     @inject("TodosRepository") private readonly todosRepository: ITodosRepository,
