@@ -12,7 +12,7 @@ export const todoItemToDomainAdapter = (item: IRawTodoItem): ITodoItem => ({
 export const todoListToDomainAdapter = (todoList: IRawTodoList): ITodoList => ({
   id: todoList.id,
   title: todoList.title,
-  items: todoList.items.map(todoItemToDomainAdapter),
+  items: (todoList.items ?? []).map(todoItemToDomainAdapter),
 });
 
 export const todoItemToRawAdapter = (item: ITodoItem): IRawTodoItem => ({

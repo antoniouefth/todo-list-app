@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Dialog,
@@ -25,6 +25,7 @@ interface RenameListDialogProps {
 }
 
 export function RenameListDialog({ currentTitle, onSubmit }: RenameListDialogProps) {
+  console.log("[render] RenameListDialog")
   const [open, setOpen] = useState(false);
   const form = useForm<IRenameListFormInput>({
     resolver: zodResolver(renameListSchema),
@@ -34,6 +35,13 @@ export function RenameListDialog({ currentTitle, onSubmit }: RenameListDialogPro
   useEffect(() => {
     form.reset({ title: currentTitle });
   }, [currentTitle, form]);
+
+  const handleFormSubmit = form.handleSubmit(async (values) => {
+    await onSubmit(values.title);
+    setOpen(false);
+  });
+
+  const handleCancel = useCallback(() => setOpen(false), []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -47,13 +55,7 @@ export function RenameListDialog({ currentTitle, onSubmit }: RenameListDialogPro
         <DialogHeader>
           <DialogTitle>Rename todo list</DialogTitle>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit(async (values) => {
-            await onSubmit(values.title);
-            setOpen(false);
-          })}
-          className="space-y-3"
-        >
+        <form onSubmit={handleFormSubmit} className="space-y-3">
           <Input
             {...form.register("title")}
             aria-label="Todo list title"
@@ -67,7 +69,7 @@ export function RenameListDialog({ currentTitle, onSubmit }: RenameListDialogPro
           <DialogFooter>
             <Button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={handleCancel}
               className="bg-red-600 text-white hover:bg-red-700"
             >
               Cancel

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -8,21 +9,20 @@ import {
 } from "@/app/ui/features/todos/schemas/todo-item-schema";
 import { Button } from "@/app/ui/shared/components/ui/button";
 import { Input } from "@/app/ui/shared/components/ui/input";
+import { useTodoMutations } from "@/app/ui/features/todos/hooks/use-todo-mutations";
 
-interface AddTodoFormProps {
-  onSubmit: (name: string) => Promise<void>;
-}
-
-export function AddTodoForm({ onSubmit }: AddTodoFormProps) {
+export const AddTodoForm = React.memo(function AddTodoForm() {
+  const { addTodoItem } = useTodoMutations();
   const form = useForm<ITodoItemFormInput>({
     resolver: zodResolver(todoItemSchema),
     defaultValues: { name: "" },
   });
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit(values.name);
+    await addTodoItem(values.name);
     form.reset();
   });
+  console.log("[render] AddTodoForm");
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
@@ -47,4 +47,4 @@ export function AddTodoForm({ onSubmit }: AddTodoFormProps) {
       </Button>
     </form>
   );
-}
+});

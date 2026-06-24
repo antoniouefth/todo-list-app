@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/app/ui/shared/components/ui/button";
 import {
@@ -24,12 +24,23 @@ interface TodoEditDialogProps {
   onEdit: (name: string) => Promise<void>;
 }
 
-export function TodoEditDialog({ itemName, onEdit }: TodoEditDialogProps) {
+export const TodoEditDialog = memo(function TodoEditDialog({
+  itemName,
+  onEdit,
+}: TodoEditDialogProps) {
+  console.log("[render] TodoEditDialog")
   const [open, setOpen] = useState(false);
   const form = useForm<ITodoItemFormInput>({
     resolver: zodResolver(todoItemSchema),
     defaultValues: { name: itemName },
   });
+
+  const handleFormSubmit = form.handleSubmit(async (values) => {
+    await onEdit(values.name);
+    setOpen(false);
+  });
+
+  const handleCancel = useCallback(() => setOpen(false), []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -42,13 +53,7 @@ export function TodoEditDialog({ itemName, onEdit }: TodoEditDialogProps) {
         <DialogHeader>
           <DialogTitle>Edit todo item</DialogTitle>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit(async (values) => {
-            await onEdit(values.name);
-            setOpen(false);
-          })}
-          className="space-y-3"
-        >
+        <form onSubmit={handleFormSubmit} className="space-y-3">
           <Input
             {...form.register("name")}
             aria-label={`Edit name for ${itemName}`}
@@ -62,7 +67,7 @@ export function TodoEditDialog({ itemName, onEdit }: TodoEditDialogProps) {
           <DialogFooter>
             <Button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={handleCancel}
               className="bg-red-600 text-white hover:bg-red-700"
             >
               Cancel
@@ -78,4 +83,4 @@ export function TodoEditDialog({ itemName, onEdit }: TodoEditDialogProps) {
       </DialogContent>
     </Dialog>
   );
-}
+});

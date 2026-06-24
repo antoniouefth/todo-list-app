@@ -3,14 +3,14 @@ import type { ITodosRepository } from "@/app/domain/todos/repositories/todos-rep
 import { inject, injectable } from "inversify";
 
 @injectable()
-export class USaveTodoListUseCase {
-  static readonly symbol = Symbol.for("SaveTodoListUseCase");
+export class UCreateTodoListUseCase {
+  static readonly symbol = Symbol.for("CreateTodoListUseCase");
 
   constructor(
     @inject("TodosRepository") private readonly todosRepository: ITodosRepository,
   ) {}
 
-  async execute(todoList: ITodoList): Promise<void> {
-    await this.todosRepository.saveTodoList(todoList);
+  async execute(title: string): Promise<ITodoList> {
+    return this.todosRepository.createTodoList(title);
   }
 }

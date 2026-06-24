@@ -1,10 +1,13 @@
 "use client";
 
+import React, { useCallback } from "react";
 import { Button } from "@/app/ui/shared/components/ui/button";
 import type { ITodoItem } from "@/app/domain/todos/entities/todo-item";
 import { ArrowDown, ArrowUp, GripVertical, Trash2 } from "lucide-react";
 import { cn } from "@/app/ui/shared/lib/utils";
 import { TodoEditDialog } from "@/app/ui/features/todos/components/todo-edit-dialog";
+import { useTodoMutations } from "@/app/ui/features/todos/hooks/use-todo-mutations";
+import { useTodoUIStore } from "@/app/ui/features/todos/store/todo-ui-store";
 
 interface TodoItemRowProps {
   item: ITodoItem;
@@ -12,31 +15,70 @@ interface TodoItemRowProps {
   canMoveUp: boolean;
   canMoveDown: boolean;
   isDragging: boolean;
-  onToggle: () => Promise<void>;
-  onDelete: () => Promise<void>;
-  onEdit: (name: string) => Promise<void>;
-  onMoveUp: () => Promise<void>;
-  onMoveDown: () => Promise<void>;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  onDropOn: (targetId: string) => Promise<void>;
 }
 
-export function TodoItemRow({
+export const TodoItemRow = React.memo(function TodoItemRow({
   item,
   isManualSort,
   canMoveUp,
   canMoveDown,
   isDragging,
-  onToggle,
-  onDelete,
-  onEdit,
-  onMoveUp,
-  onMoveDown,
-  onDragStart,
-  onDragEnd,
-  onDropOn,
 }: TodoItemRowProps) {
+  console.log("[render] TodoItemRow")
+  const { toggleTodoItem, deleteTodoItem, editTodoItem, moveTodoItem, reorderTodoItems } =
+    useTodoMutations();
+  const setDraggingTodoId = useTodoUIStore((s) => s.setDraggingTodoId);
+
+  const handleDragStart = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.dataTransfer.setData("text/plain", item.id);
+      setDraggingTodoId(item.id);
+    },
+    [item.id, setDraggingTodoId],
+  );
+
+  const handleDragOver = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      if (isManualSort) {
+        event.preventDefault();
+      }
+    },
+    [isManualSort],
+  );
+
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      const fromTodoId = event.dataTransfer.getData("text/plain");
+      void reorderTodoItems(fromTodoId, item.id);
+    },
+    [reorderTodoItems, item.id],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingTodoId(null);
+  }, [setDraggingTodoId]);
+
+  const handleToggle = useCallback(() => {
+    void toggleTodoItem(item.id);
+  }, [toggleTodoItem, item.id]);
+
+  const handleMoveUp = useCallback(() => {
+    void moveTodoItem(item.id, "up");
+  }, [moveTodoItem, item.id]);
+
+  const handleMoveDown = useCallback(() => {
+    void moveTodoItem(item.id, "down");
+  }, [moveTodoItem, item.id]);
+
+  const handleEdit = useCallback(
+    (name: string) => editTodoItem(item.id, name),
+    [editTodoItem, item.id],
+  );
+
+  const handleDelete = useCallback(() => {
+    void deleteTodoItem(item.id);
+  }, [deleteTodoItem, item.id]);
+
   return (
     <div
       className={cn(
@@ -44,20 +86,10 @@ export function TodoItemRow({
         isDragging ? "scale-[0.99] opacity-70" : "opacity-100",
       )}
       draggable={isManualSort}
-      onDragStart={(event) => {
-        event.dataTransfer.setData("text/plain", item.id);
-        onDragStart();
-      }}
-      onDragOver={(event) => {
-        if (isManualSort) {
-          event.preventDefault();
-        }
-      }}
-      onDrop={(event) => {
-        const fromTodoId = event.dataTransfer.getData("text/plain");
-        void onDropOn(fromTodoId);
-      }}
-      onDragEnd={onDragEnd}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
     >
       <span
         className={cn(
@@ -76,7 +108,7 @@ export function TodoItemRow({
 
       <input
         checked={item.completed}
-        onChange={() => void onToggle()}
+        onChange={handleToggle}
         type="checkbox"
         aria-label={`Toggle completion for ${item.name}`}
         className="h-4 w-4 cursor-pointer"
@@ -102,7 +134,7 @@ export function TodoItemRow({
               : ""
           )}
           disabled={!isManualSort || !canMoveUp}
-          onClick={() => void onMoveUp()}
+          onClick={handleMoveUp}
           title={isManualSort ? "Move up" : "Reordering is disabled for current filters"}
         >
           <ArrowUp className="h-4 w-4" />
@@ -117,18 +149,23 @@ export function TodoItemRow({
               : "cursor-not-allowed opacity-60",
           )}
           disabled={!isManualSort || !canMoveDown}
-          onClick={() => void onMoveDown()}
+          onClick={handleMoveDown}
           title={isManualSort ? "Move down" : "Reordering is disabled for current filters"}
         >
           <ArrowDown className="h-4 w-4" />
         </Button>
       </div>
 
-      <TodoEditDialog itemName={item.name} onEdit={onEdit} />
+      <TodoEditDialog itemName={item.name} onEdit={handleEdit} />
 
-      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => void onDelete()}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={handleDelete}
+      >
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>
   );
-}
+});
