@@ -8,7 +8,7 @@ export default async function Home() {
   await connection();
 
   const queryClient = new QueryClient();
-  await queryClient.fetchQuery({
+  await queryClient.prefetchQuery({
     queryKey: TODO_LIST_QUERY_KEY,
     queryFn: getOrCreateTodoList,
     staleTime: 2*60*1000,
